@@ -9,7 +9,7 @@ public class JsonParser
 
     }
 
-    public JsonHandler[] get_AllJsonHandlers(String json)
+    public JsonHandler[] get_all_JsonHandlers(String json)
     {
         Gson gson = new Gson();
         JsonHandler[] all_json_handlers = gson.fromJson(json, JsonHandler[].class);

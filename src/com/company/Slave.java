@@ -16,7 +16,7 @@ public class Slave extends Thread
         this.time = time;
     }
 
-    synchronized boolean get_finished()
+    boolean get_finished()
     {
         return finished;
     }

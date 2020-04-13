@@ -14,37 +14,34 @@ public class Main
         // write your code here
         System.setProperty("webdriver.chrome.driver", "src/resources/chromedriver.exe");
 
-        Master NewMaster = new Master();
-        MyTimer NewTimer = new MyTimer(NewMaster);
+        Master newMaster = new Master();
+        MyTimer newTimer = new MyTimer(newMaster);
 
         int count = 0;
-        while (NewMaster.get_active())
+        while (newMaster.get_active())
         {
-            if (NewMaster.slaves.size() != 0)
+            if (newMaster.slaves.size() != 0)
             {
-                for (int i = 0; i < NewMaster.slaves.size(); i++)
+                for (int i = 0; i < newMaster.slaves.size(); i++)
                 {
-                    if (NewMaster.slaves.get(i).get_finished())
+                    if (newMaster.slaves.get(i).get_finished())
                     {
-                        //NewMaster.update_tasks();//обновляем задачи
-                        NewMaster.update_slave(i);//обновляем,либо удаляем раба
-                        NewMaster.create_slaves_from_tasks();//создаем новые потоки из задач
+                        //newMaster.update_tasks();//обновляем задачи
+                        newMaster.update_slave(i);//обновляем,либо удаляем раба
+                        newMaster.create_slaves_from_tasks();//создаем новые потоки из задач
 
                         count++;
                         System.out.println("Done");
                     }
                 }
                 if (count == 3)
-                    NewMaster.disable();
+                    newMaster.disable();
             }
             Thread.yield();
         }
 
-        NewTimer.disable();
+        newTimer.disable();
 
-        for (int i = 0; i < NewMaster.tasks.size(); i++)
-            System.out.println(NewMaster.tasks.get(i));
-
-        NewMaster.kill_all_threads();
+        newMaster.kill_all_threads();
     }
 }

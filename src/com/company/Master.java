@@ -54,7 +54,7 @@ public class Master
             e.printStackTrace();
         }
         JsonParser json_parser = new JsonParser();
-        return json_parser.get_AllJsonHandlers(json.toString());
+        return json_parser.get_all_JsonHandlers(json.toString());
     }
 
     synchronized void update_slave(int slave_id)//получает slave_id,который стригерил запрос
