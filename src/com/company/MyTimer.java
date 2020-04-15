@@ -1,18 +1,14 @@
 package com.company;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-
 public class MyTimer
 {
-    Master NewMaster;
+    Master newMaster;
     private boolean is_active;
 
-    MyTimer(Master NewMaster)
+    MyTimer(Master newMaster)
     {
         is_active = true;
-        this.NewMaster = NewMaster;
+        this.newMaster = newMaster;
 
         Thread my_timer = new Thread(new Runnable()
         {
@@ -23,12 +19,12 @@ public class MyTimer
                 {
                     try
                     {
-                        NewMaster.update_tasks();
-                        NewMaster.create_slaves_from_tasks();
+                        newMaster.update_tasks();
+                        newMaster.create_slaves_from_tasks();
                         System.out.println("==========================");
                         System.out.println("Timer обновил tasks");
                         System.out.println("==========================");
-                        Thread.sleep(10000); //1000 - 1 сек
+                        Thread.sleep(60000); //1000 - 1 сек
                     } catch (InterruptedException ex)
                     {
                         break;

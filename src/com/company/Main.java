@@ -17,6 +17,7 @@ public class Main
         Master newMaster = new Master();
         MyTimer newTimer = new MyTimer(newMaster);
 
+
         int count = 0;
         while (newMaster.get_active())
         {
@@ -29,19 +30,18 @@ public class Main
                         //newMaster.update_tasks();//обновляем задачи
                         newMaster.update_slave(i);//обновляем,либо удаляем раба
                         newMaster.create_slaves_from_tasks();//создаем новые потоки из задач
-
                         count++;
                         System.out.println("Done");
                     }
                 }
-                if (count == 3)
+                if (count == 2)
                     newMaster.disable();
             }
             Thread.yield();
         }
 
+        newMaster.slaves.get(0).set_unfinished();
         newTimer.disable();
-
         newMaster.kill_all_threads();
     }
 }

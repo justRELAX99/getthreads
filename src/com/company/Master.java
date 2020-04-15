@@ -61,7 +61,7 @@ public class Master
     {
         int thread_id;
         boolean task_founded = false;
-        thread_id = slaves.get(slave_id).task_json.id;
+        thread_id = slaves.get(slave_id).taskJson.id;
 
         if (tasks.size() != 0)
         {
@@ -69,7 +69,7 @@ public class Master
             {
                 if (tasks.get(i).id == thread_id)//если в тасках нашли задачу для thread_id,то меняем ему задачу
                 {
-                    slaves.get(slave_id).task_json = tasks.get(i);
+                    slaves.get(slave_id).taskJson = tasks.get(i);
                     tasks.remove(i);
                     slaves.get(slave_id).set_unfinished();
                     task_founded = true;
@@ -106,11 +106,11 @@ public class Master
         }
     }
 
-    void create_thread(JsonHandler task_json, int time)
+    void create_thread(JsonHandler taskJson, int time)
     {
-        Slave NewSlave = new Slave(task_json, time);
-        slaves.add(NewSlave);
-        NewSlave.start();
+        Slave newSlave = new Slave(taskJson, time);
+        slaves.add(newSlave);
+        newSlave.start();
     }
 
     boolean get_active()
@@ -129,7 +129,7 @@ public class Master
         {
             for (int i = 0; i < slaves.size(); i++)
             {
-                if (slaves.get(i).task_json.id == thread_id)
+                if (slaves.get(i).taskJson.id == thread_id)
                     return i;
             }
         }
@@ -140,6 +140,7 @@ public class Master
     {
         slaves.get(slave_id).disable();
         slaves.remove(slave_id);
+        slaves.get(slave_id).set_unfinished();
     }
 
     void kill_thread_by_thread_id(int thread_id)
@@ -163,7 +164,7 @@ public class Master
             }
             slaves.removeAll(slaves);
         }
+        notifyAll();
     }
-
 
 }
