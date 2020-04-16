@@ -27,6 +27,7 @@ public class Master
                 for (int i = 0; i < new_tasks.length; i++)
                 {
                     tasks.add(new_tasks[i]);
+                    System.out.println(new_tasks[i].all_to_string());
                 }
             }
         } catch (Exception e)
@@ -57,7 +58,7 @@ public class Master
         return json_parser.get_all_JsonHandlers(json.toString());
     }
 
-    synchronized void update_slave(int slave_id)//получает slave_id,который стригерил запрос
+    synchronized void update_slave(int slave_id) throws InterruptedException//получает slave_id,который стригерил запрос
     {
         int thread_id;
         boolean task_founded = false;
@@ -80,8 +81,7 @@ public class Master
             {
                 kill_thread_by_slave_id(slave_id);
             }
-        }
-        else
+        } else
         {
             kill_thread_by_slave_id(slave_id);
         }
@@ -136,35 +136,36 @@ public class Master
         return -1;
     }
 
-    void kill_thread_by_slave_id(int slave_id)
+    void kill_thread_by_slave_id(int slave_id) throws InterruptedException
     {
         slaves.get(slave_id).disable();
-        slaves.remove(slave_id);
         slaves.get(slave_id).set_unfinished();
+        slaves.remove(slave_id);
     }
 
-    void kill_thread_by_thread_id(int thread_id)
+    void kill_thread_by_thread_id(int thread_id) throws InterruptedException
     {
         int slave_id;
         slave_id = get_slave_id_by_thread_id(thread_id);
         if (slave_id != -1)
         {
             slaves.get(slave_id).disable();
+            slaves.get(slave_id).set_unfinished();
             slaves.remove(slave_id);
         }
     }
 
-    void kill_all_threads()//потоки заканчивают текущий цикл while и удаляются
+    void kill_all_threads() throws InterruptedException//потоки заканчивают текущий цикл while и удаляются
     {
         if (slaves.size() != 0)
         {
             for (int i = 0; i < slaves.size(); i++)
             {
                 slaves.get(i).disable();
+                slaves.get(i).set_unfinished();
             }
             slaves.removeAll(slaves);
         }
-        notifyAll();
     }
 
 }

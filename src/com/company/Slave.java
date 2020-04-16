@@ -1,8 +1,13 @@
 package com.company;
 
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Slave extends Thread
 {
@@ -12,6 +17,7 @@ public class Slave extends Thread
     private String old_url;
     private boolean is_active;
     private boolean finished;
+    private Object LOCK_THREAD = new Object();
 
     Slave(JsonHandler taskJson, int time)
     {
@@ -26,16 +32,23 @@ public class Slave extends Thread
         return finished;
     }
 
-    synchronized void set_unfinished()
+    void set_unfinished() throws InterruptedException
     {
+
         finished = false;
-        notify();
+        synchronized (LOCK_THREAD)
+        {
+            LOCK_THREAD.notify();
+        }
     }
 
-    synchronized void set_finished() throws InterruptedException
+    void set_finished() throws InterruptedException
     {
-        finished=true;
-        wait();
+        finished = true;
+        synchronized (LOCK_THREAD)
+        {
+            LOCK_THREAD.wait();
+        }
     }
 
     boolean get_active()
@@ -48,31 +61,105 @@ public class Slave extends Thread
         is_active = false;
     }
 
-    synchronized ChromeDriver get_browser(String string_proxy,String string_user_agent)
+    synchronized void save_cookies(Set<Cookie> cookies, String cookies_path)
+    {
+        File file = new File(cookies_path);
+        try
+        {
+            // Delete old file if exists
+            file.delete();
+            file.createNewFile();
+            FileWriter fileWrite = new FileWriter(file);
+            BufferedWriter Bwrite = new BufferedWriter(fileWrite);
+            // loop for getting the cookie information
+            for (Cookie ck : cookies)
+            {
+                Bwrite.write((ck.getName() + ";" + ck.getValue() + ";" + ck.getDomain() + ";" + ck.getPath() + ";" + ck.getExpiry() + ";" + ck.isSecure()));
+                Bwrite.newLine();
+            }
+            Bwrite.close();
+            fileWrite.close();
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+    }
+
+    synchronized ArrayList<Cookie> get_cookies(String cookies_path) throws IOException
+    {
+        ArrayList<Cookie> new_cookies = new ArrayList<>();
+        try
+        {
+            File file = new File(cookies_path);
+            FileReader fileReader = new FileReader(file);
+            BufferedReader Buffreader = new BufferedReader(fileReader);
+
+            String strline;
+            while ((strline = Buffreader.readLine()) != null)
+            {
+                StringTokenizer token = new StringTokenizer(strline, ";");
+
+                while (token.hasMoreTokens())
+                {
+                    String name = token.nextToken();
+                    String value = token.nextToken();
+                    String domain = token.nextToken();
+                    String path = token.nextToken();
+                    Date expiry = null;
+
+                    String val;
+                    if (!(val = token.nextToken()).equals("null"))
+                    {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                                "EEE MMM dd HH:mm:ss zzz yyyy", Locale.US);
+                        expiry = dateFormat.parse(val);
+                    }
+
+                    Boolean isSecure = Boolean.valueOf(token.nextToken());
+                    Cookie ck = new Cookie(name, value, domain, path, expiry, isSecure);
+                    new_cookies.add(ck);
+                }
+            }
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        return new_cookies;
+    }
+
+    synchronized ChromeDriver get_browser(String string_proxy, String string_user_agent, String cookies_path)
     {
         ChromeOptions options = new ChromeOptions();
 
-        if(string_proxy!="")
+        if ((string_proxy != null) && (string_proxy.length() != 0))
         {
             Proxy proxy = new Proxy();
             proxy.setHttpProxy(string_proxy);
             options.setCapability("proxy", proxy);
         }
-        if(string_user_agent!="")
+        if ((string_user_agent != null) && (string_user_agent.length() != 0))
         {
-            options.addArguments("user-agent="+string_user_agent);
+            options.addArguments("user-agent=" + string_user_agent);
         }
         ChromeDriver driver = new ChromeDriver(options);
-
         return driver;
     }
 
     void execute_task(ChromeDriver driver)
     {
 
-        driver.get("http://demo.guru99.com/");//проверять,если юрл изменился,то не переходить
+        driver.get(taskJson.url);//проверять,если юрл изменился,то не переходить
 
-        if(taskJson.time_js1!=0)
+        try
+        {
+            if ((taskJson.js1 != null) && (taskJson.js1.length() != 0))
+                driver.executeScript(taskJson.js1);
+        } catch (Exception e)
+        {
+            System.out.println("js1 не выолнился,id=" + taskJson.id);
+        }
+
+        if (taskJson.time_js1 != 0)
         {
             try
             {
@@ -85,15 +172,14 @@ public class Slave extends Thread
 
         try
         {
-            if ((taskJson.js1 != "") && (taskJson.js1!=null))
-                driver.executeScript("");
-        }
-        catch (Exception e)
+            if ((taskJson.js2 != null) && (taskJson.js2.length() != 0))
+                driver.executeScript(taskJson.js2);
+        } catch (Exception e)
         {
-            System.out.println("js1 не выолнился,id="+taskJson.id);
+            System.out.println("js2 не выолнился,id=" + taskJson.id);
         }
 
-        if(taskJson.time_js2!=0)
+        if (taskJson.time_js2 != 0)
         {
             try
             {
@@ -103,17 +189,32 @@ public class Slave extends Thread
                 e.printStackTrace();
             }
         }
+    }
 
-        try
-        {
-            if ((taskJson.js2 != "") && (taskJson.js2!=null))
-                driver.executeScript("");
-        }
-        catch (Exception e)
-        {
-            System.out.println("js2 не выолнился,id="+taskJson.id);
-        }
+    void get_cookies_in_file(ChromeDriver driver, String cookies_path) throws InterruptedException
+    {
+        driver.get("http://vk.com/");
+        Thread.sleep(10000);
+        driver.executeScript("document.getElementById('index_email').value = 'monstr541@yandex.ru' " + "\n" +
+                "document.getElementById('index_pass').value = 'bzr7quj991331AA'" + "\n" +
+                "document.getElementById('index_login_button').click()");
+        Thread.sleep(10000);
+        save_cookies(driver.manage().getCookies(), cookies_path);
+        driver.get("http://vk.com/");
+    }
 
+    void set_cookie_from_file(ChromeDriver driver, String cookies_path) throws IOException, InterruptedException
+    {
+
+        driver.get("http://vk.com/");
+        ArrayList<Cookie> cookies = get_cookies(cookies_path);
+        for (Cookie cookie : cookies)
+        {
+            System.out.println(cookie);
+            driver.manage().addCookie(cookie);
+        }
+        driver.get("http://vk.com/");
+        Thread.sleep(10000);
     }
 
     public void run()
@@ -121,11 +222,11 @@ public class Slave extends Thread
         System.out.printf("%s started... \n", taskJson.id);
         int counter = 1; // счетчик циклов
         ChromeDriver driver;
-
-        String user_agent="";
-        String proxy="";
-
-        driver=get_browser(proxy,user_agent);
+        String proxy = "";
+        String user_agent = "";
+        String cookies_path = "Cookies.data";
+        //driver=get_browser(proxy,user_agent,cookies_path);
+        driver = get_browser(taskJson.proxy, taskJson.user_agent, taskJson.cookies_path);
         while (is_active)
         {
             if (!finished)
@@ -134,20 +235,20 @@ public class Slave extends Thread
                 {
                     Thread.sleep(time);
                     System.out.println("Loop " + counter++ + " id=" + taskJson.id);
-
-
-                    if(is_active)//если во время выполнения мы не убили поток,но останавливаем его полностью
+                    execute_task(driver);
+                    if (is_active)//если во время выполнения мы не убили поток,но останавливаем его полностью
+                    {
+                        synchronized (Main.LOCK_MAIN)
+                        {
+                            Main.LOCK_MAIN.notify();
+                        }
                         set_finished();
-                    else //если убили,то устанавливаем значение finished и на следующей итерации поток закончится
-                        finished=true;
-
+                    } else //если убили,то устанавливаем значение finished и на следующей итерации поток закончится
+                        finished = true;
                 } catch (InterruptedException e)
                 {
                     System.out.println("Thread has been interrupted");
                 }
-            } else
-            {
-                Thread.yield();
             }
         }
         driver.quit();

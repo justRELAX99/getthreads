@@ -7,7 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Main
 {
 
-    static Lock lock = new ReentrantLock();
+    static final Object LOCK_MAIN = new Object();
 
     public static void main(String[] args) throws InterruptedException
     {
@@ -35,12 +35,17 @@ public class Main
                     }
                 }
                 if (count == 2)
+                {
                     newMaster.disable();
+                    break;
+                }
             }
-            Thread.yield();
+            synchronized (LOCK_MAIN)
+            {
+                LOCK_MAIN.wait();
+            }
         }
 
-        newMaster.slaves.get(0).set_unfinished();
         newTimer.disable();
         newMaster.kill_all_threads();
     }
