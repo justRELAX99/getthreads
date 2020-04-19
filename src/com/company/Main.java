@@ -42,7 +42,7 @@ public class Main
             }
             synchronized (LOCK_MAIN)
             {
-                LOCK_MAIN.wait();
+                LOCK_MAIN.wait(10000);//просыпается каждые 10 секунд
             }
         }
 

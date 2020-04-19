@@ -12,19 +12,17 @@ import java.util.*;
 public class Slave extends Thread
 {
     JsonHandler taskJson;
-    int time;
 
-    private String old_url;
+    private String old_url="";
     private boolean is_active;
     private boolean finished;
     private Object LOCK_THREAD = new Object();
 
-    Slave(JsonHandler taskJson, int time)
+    Slave(JsonHandler taskJson)
     {
         is_active = true;
         finished = false;
         this.taskJson = taskJson;
-        this.time = time;
     }
 
     boolean get_finished()
@@ -79,7 +77,8 @@ public class Slave extends Thread
             }
             Bwrite.close();
             fileWrite.close();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
         }
@@ -120,14 +119,15 @@ public class Slave extends Thread
                     new_cookies.add(ck);
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
         }
         return new_cookies;
     }
 
-    synchronized ChromeDriver get_browser(String string_proxy, String string_user_agent, String cookies_path)
+    ChromeDriver get_browser(String string_proxy, String string_user_agent, String cookies_path)
     {
         ChromeOptions options = new ChromeOptions();
 
@@ -147,14 +147,33 @@ public class Slave extends Thread
 
     void execute_task(ChromeDriver driver)
     {
-
-        driver.get(taskJson.url);//проверять,если юрл изменился,то не переходить
+        try
+        {
+            if(old_url.length()!=0)//проверять,если юрл изменился,то переходить
+            {
+                old_url=taskJson.url;
+                driver.get(taskJson.url);
+            }
+            else
+            {
+                if(old_url!=taskJson.url)
+                {
+                    old_url=taskJson.url;
+                    driver.get(taskJson.url);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println("Не удалось перейти по адресу,id="+taskJson.id);
+        }
 
         try
         {
             if ((taskJson.js1 != null) && (taskJson.js1.length() != 0))
                 driver.executeScript(taskJson.js1);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             System.out.println("js1 не выолнился,id=" + taskJson.id);
         }
@@ -164,7 +183,8 @@ public class Slave extends Thread
             try
             {
                 Thread.sleep(taskJson.time_js1);
-            } catch (InterruptedException e)
+            }
+            catch (InterruptedException e)
             {
                 e.printStackTrace();
             }
@@ -174,7 +194,8 @@ public class Slave extends Thread
         {
             if ((taskJson.js2 != null) && (taskJson.js2.length() != 0))
                 driver.executeScript(taskJson.js2);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             System.out.println("js2 не выолнился,id=" + taskJson.id);
         }
@@ -184,7 +205,8 @@ public class Slave extends Thread
             try
             {
                 Thread.sleep(taskJson.time_js2);
-            } catch (InterruptedException e)
+            }
+            catch (InterruptedException e)
             {
                 e.printStackTrace();
             }
@@ -220,7 +242,6 @@ public class Slave extends Thread
     public void run()
     {
         System.out.printf("%s started... \n", taskJson.id);
-        int counter = 1; // счетчик циклов
         ChromeDriver driver;
         String proxy = "";
         String user_agent = "";
@@ -233,8 +254,7 @@ public class Slave extends Thread
             {
                 try
                 {
-                    Thread.sleep(time);
-                    System.out.println("Loop " + counter++ + " id=" + taskJson.id);
+                    System.out.printf("%s started... \n", taskJson.id);
                     execute_task(driver);
                     if (is_active)//если во время выполнения мы не убили поток,но останавливаем его полностью
                     {
@@ -245,12 +265,15 @@ public class Slave extends Thread
                         set_finished();
                     } else //если убили,то устанавливаем значение finished и на следующей итерации поток закончится
                         finished = true;
-                } catch (InterruptedException e)
+                }
+                catch (InterruptedException e)
                 {
-                    System.out.println("Thread has been interrupted");
+                        System.out.println("Thread был прерван,id="+taskJson.id);
                 }
             }
         }
+
+
         driver.quit();
         System.out.printf("%s fiished... \n", taskJson.id);
     }

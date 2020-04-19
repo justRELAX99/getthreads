@@ -30,13 +30,14 @@ public class Master
                     System.out.println(new_tasks[i].all_to_string());
                 }
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             System.out.println("Tasks не обновлены");
         }
     }
 
-    synchronized JsonHandler[] take_json_from_url()
+    JsonHandler[] take_json_from_url()
     {
         StringBuilder json = new StringBuilder();
         String line;
@@ -50,7 +51,8 @@ public class Master
                 json.append(line);
             }
             reader.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             e.printStackTrace();
         }
@@ -58,7 +60,7 @@ public class Master
         return json_parser.get_all_JsonHandlers(json.toString());
     }
 
-    synchronized void update_slave(int slave_id) throws InterruptedException//получает slave_id,который стригерил запрос
+    void update_slave(int slave_id) throws InterruptedException//получает slave_id,который стригерил запрос
     {
         int thread_id;
         boolean task_founded = false;
@@ -81,13 +83,14 @@ public class Master
             {
                 kill_thread_by_slave_id(slave_id);
             }
-        } else
+        }
+        else
         {
             kill_thread_by_slave_id(slave_id);
         }
     }
 
-    synchronized void create_slaves_from_tasks()//создаем новые потоки из задач
+    void create_slaves_from_tasks()//создаем новые потоки из задач
     {
         if (tasks.size() != 0)
         {
@@ -96,9 +99,10 @@ public class Master
                 if (get_slave_id_by_thread_id(tasks.get(i).id) != -1)
                 {
                     continue;
-                } else
+                }
+                else
                 {
-                    create_thread(tasks.get(i), 1000);
+                    create_thread(tasks.get(i));
                     tasks.remove(i);
                     i--;
                 }
@@ -106,9 +110,9 @@ public class Master
         }
     }
 
-    void create_thread(JsonHandler taskJson, int time)
+    void create_thread(JsonHandler taskJson)
     {
-        Slave newSlave = new Slave(taskJson, time);
+        Slave newSlave = new Slave(taskJson);
         slaves.add(newSlave);
         newSlave.start();
     }
@@ -123,7 +127,7 @@ public class Master
         is_active = false;
     }
 
-    private int get_slave_id_by_thread_id(int thread_id)//если не нашли раба по id потока возвращаем -1
+    int get_slave_id_by_thread_id(int thread_id)//если не нашли раба по id потока возвращаем -1
     {
         if (slaves.size() != 0)
         {

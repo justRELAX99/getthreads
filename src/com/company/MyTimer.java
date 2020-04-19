@@ -25,9 +25,10 @@ public class MyTimer
                         System.out.println("Timer обновил tasks");
                         System.out.println("==========================");
                         Thread.sleep(60000); //1000 - 1 сек
-                    } catch (InterruptedException ex)
+                    }
+                    catch (InterruptedException ex)
                     {
-                        break;
+                        System.out.println("Ошибка обновления таймера");
                     }
                 }
             }
